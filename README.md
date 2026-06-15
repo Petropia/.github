@@ -1,49 +1,51 @@
-# Petropia
+# Petropia – Das Code-Archiv unseres Minecraft-Netzwerks
 
-## Vorwort
+## Über das Projekt
 
-Dies ist das offizielle Archiv des Petropia Netzwerks. Dieses Netzwerk war als ein revolutionäres, selbst programmiertes Minecraft Netzwerk gedacht. Leider ging diese Vision nie in Erfüllung, selbst nach etwa 2 Jahren Entwicklung, da das Verhalten der hauptverantwortlichen Leitung keine andere Wahl ließ, als sich von dieser zu trennen, aufgrund von schwerwiegenden Enthüllungen über diese. Dennoch ist diese Organisation als ein Archiv der bisherigen Projekte und als Inspiration für andere Entwickler gedacht.
+Petropia war ein komplett selbst entwickeltes Minecraft-Netzwerk, an dem wir über zwei Jahre lang als Team gearbeitet haben. Unser Ziel war es, weg von Standard-Plugins zu gehen und stattdessen eine eigene, performante und flexible Server-Struktur aufzubauen. 
 
-## Infrastruktur
+Auch wenn das Netzwerk am Ende nicht Full-Time online gegangen ist, steckt in dieser GitHub-Organisation jede Menge Arbeit, Herzblut und vor allem cooler Code. Wir haben uns dazu entschieden, das gesamte Projekt als **Open-Source-Archiv** zur Verfügung zu stellen. Wenn du selbst Plugins entwickelst oder dich für die Logik hinter größeren Netzwerken interessierst, kannst du dich hier gerne bedienen und inspirieren lassen!
 
-Die Infrastruktur basierte auf einem 64GB/12-Kern Linux Server. Als Management für die Minecraft Server wurde CloudNet v4 genutzt, dessen API und MessageChannels das Rückgrat aller internen API bildeten. Als Minecraft Server Software wurde Paper 1.20.1 genutzt. Als Proxy wurde Velocity in der neuesten Version verwendet.
+## Das technische Fundament (Setup)
 
-## Spielmodi
+Damit alles flüssig läuft und die Server nicht unter der Last laggen, haben wir uns für folgendes Setup entschieden:
 
-Im Folgenden sind alle Spielmodi aufgelistet, die fertiggestellt wurden oder noch in Arbeit waren.
+* **Hardware:** Ubuntu-Server (64GB RAM, 12-Kern CPU)
+* **Server-Software:** Paper 1.20.1 kombiniert mit dem Velocity-Proxy, um die Spieler flexibel auf die Unterserver zu verteilen.
+* **Netzwerk-Management:** CloudNet v4. Die CloudNet-API und ihre MessageChannels waren das Messagesystem unseres Netzwerks, über das unsere Plugins miteinander kommuniziert haben.
+* **Datenbank:** MongoDB, um Spielerdaten, Inventare und Welten performant und asynchron zu sichern.
 
-### Bingo (fertiggestellt)
+---
 
-Bei Bingo geht es darum, auf einer zufälligen Vanilla-Welt 5 Items in einer Reihe von der Bingokarte zu sammeln. Bingo kann alleine als 8x1 oder in Teams als 4x2 mit PvP gespielt werden. Die Bingokarte wird zufällig generiert, wobei jedem Item ein bestimmter Schwierigkeitsgrad zugewiesen wird. Leichte Items werden durch einen Algorithmus häufiger auf der Karte landen als schwere Items. Jeder Bingoserver konnte mehrere Arenen parallel hosten, was den Aufwand für mehrere Minecraft Server minimierte.
+## Unsere wichtigsten Eigenentwicklungen
 
-### ChickenLeague (fertiggestellt)
+### 1. TurtleServer (Der Kern)
+Der `TurtleServer` ist unsere Kern-API. Statt das jedes Plugin alles selber umsetzt, läuft hier alles zusammen, was global wichtig ist:
+* **Daten & Profile:** Speicherung von Statistiken, der Namenshistorie, Skins und dem Freundesystem direkt in der MongoDB.
+* **Asynchrones Welten-System:** Um RAM zu sparen, lädt und speichert der Server Welten (z.B. vom Bau-Server) dynamisch im Hintergrund aus der Datenbank, ohne dass das Spiel ins Stocken gerät.
+* **Komfort-Features:** Einheitliche Chatformatierung, Tablisten, Prefixes und eine globale Abfrage von Chat-Eingaben für interaktive Menüs.
 
-ChickenLeague ist eine Art RocketLeague in Minecraft. Jeder Spieler hat 3 Schläger mit verschiedenen Effekten, mit denen er ein Huhn (den Ball) ins gegnerische Tor befördern muss. Zudem spawnen auf Teppichen spezielle Items, die für mehr Abwechslung sorgen. ChickenLeague kann als 1vs1, 3vs3 oder 5vs5 gespielt werden. Wie bei Bingo, werden auf jedem Server mehrere Arenen gehostet.
+### 2. Multi-Arena-System & Serverübergreifende Joins
+Standardmäßig braucht bei Minecraft oft jede Runde einen eigenen Server, was extrem viel Leistung braucht mit riesigen Overhead. Wir haben ein System gebaut, bei dem mehrere Arenen gleichzeitig auf einem einzigen Server laufen können. Die Logik dahinter:
+* **Der Ablauf:** Erstellt ein Server eine neue Arena, lädt er die passende Welt über den `TurtleServer` und gibt die Arena-ID via CloudNet an alle Lobbies weiter.
+* **Das Matchmaking:** Will ein Spieler in eine Runde, fragt die Lobby beim Minigame-Server an. Dieser reserviert den Platz, gibt den Platz frei und der Spieler wird über den Proxy direkt in die richtige Arena teleportiert. 
+* Eine neue Lobby fragt beim Starten einfach einmal das Netzwerk ab und weiß sofort über alle laufenden Runden Bescheid.
 
-### Spacelife (Work in Progress)
+---
 
-Spacelife ist der Survival-Modus des Netzwerkes. Spacelife besteht aus mehreren Komponenten:
-- Spawn: Hier können 16x16x16 Blöcke große Shops gemietet, Jobverdienste ausgezahlt und Bau/Farm/Redstone-Inseln betreten werden und vieles mehr.
-- Bauwelt: Hier können Gebiete auf einer Vanilla-Welt gekauft und erweitert werden. Jedes Gebiet besitzt diverse Einstellungen und kann mit anderen Spielern geteilt werden.
-- Farmwelt: Hier kann auf einer Vanilla-Welt gefarmt werden, und mit Jobs kann Geld verdient werden. Diese Jobs beinhalten z.B. das Abbauen von Blöcken, das Erkunden von Biomen, das Töten von Mobs und vieles mehr.
-- Redstonewelt: Hier hätten Farmen gebaut werden sollen. Zur Entwicklung dieser ist es jedoch nie gekommen.
+## Die Spielmodi
 
-Zudem gibt es ein Kernmodul namens SpaceLifeCore. Dieses hat Inventories serialisiert und gespeichert in MongoDB, teleportiert Spieler serverübergreifend, verwaltet Warps, verwaltet Geld und stellt diverse Grundfunktionen bereit.
+### Bingo (Fertiggestellt)
+Klassisches Bingo, aber komplett automatisiert in einer zufälligen Vanilla-Welt. Spielbar alleine (8x1) oder als Team mit PvP (4x2).
+* **Der Code:** Ein eigener Algorithmus generiert die Bingokarten. Jedes Item im Spiel hat eine Schwierigkeitsstufe. Der Algorithmus sorgt dafür, dass leichte Items (wie Erde oder Holz) häufiger auf der Karte landen als schwere (wie ein Totem).
 
-## TurtleServer
+### ChickenLeague (Fertiggestellt)
+Unsere Minecraft-Version von *Rocket League*. Spieler versuchen, mit verschiedenen Schlägern und Spezial-Items ein Huhn ins gegnerische Tor zu befördern (spielbar als 1vs1, 3vs3 oder 5vs5).
+* **Der Code:** Hier mussten wir die Knockback-Mechaniken von Minecraft so anpassen, dass das Huhn flüssig als "Ball" reagiert, während im Hintergrund die Arena-Logik für Tore, Punkte und Resets sorgt.
 
-TurtleServer ist die Kern-API aller Plugins. Diese Kern-API hat z.B.:
-- Chatformatierung pro Plugin verwaltet
-- Spielerprofile hinterlegt und in MongoDB gespeichert (Namenshistorie, Skins, Freunde, letzter Login, usw.)
-- Spielerstatistiken angelegt
-- Welten serialisiert und verwaltet (Welten vom Bau-Server werden in der Datenbank gespeichert, asynchron geladen und gespeichert)
-- Minigame-Joins vereinheitlicht (mehr dazu unter Minigame-Joins)
-- Chat-Eingaben abfragen
-- Prefixe und Tablist-Formatierung
-- und mehr...
+### SpaceLife (Work in Progress)
+Unser Konzept für einen modularen Survival- und Wirtschaftsmodus. Das Herzstück ist das Plugin `SpaceLifeCore`:
+* **Wirtschaft & Grundstücke:** Spieler können am Spawn Shops mieten, Jobs ausführen (Blöcke abbauen, Mobs jagen) und eigene Bauwelten kaufen.
+* **Der Code:** Die Grundstücke besitzen eigene Rechte-Einstellungen und können mit Freunden geteilt werden. Das Core-Plugin regelt das serverübergreifende Teleportieren, die Währung und die synchrone Speicherung der Spieler-Inventare in der MongoDB.
 
-## Minigame Joins
-
-Da wir den Aufwand von mehreren Minecraft-Servern für mehrere Arenen minimieren wollen, werden pro Minecraft-Server mehrere Arenen gehostet. Von diesen Minecraft-Servern können natürlich mehrere existieren. Wenn eine neue Arena erstellt wird, wird zuerst durch TurtleServer die richtige Welt geladen und dann über ein Event die ID und die Art der Arena an alle Lobbies übermittelt. Wenn nun ein Spieler einer Arena beitreten will, wird erst eine Anfrage an den Minigame-Server gestellt, dieser bestätigt diese, merkt sich den Spieler und dessen Arena, danach wird der Spieler auf den Server verbunden und in der entsprechenden Arena zugeteilt. Wenn eine neue Lobby erstellt wird, fragt diese global alle Minigame-Server nach den Arenen ab, diese schicken die Informationen an die Lobby und halten somit den Zustand der Arenen über alle Server konstant.
-
-Dies ist ein Beispiel für die vielen Systeme, die im Hintergrund des Servers arbeiten.
+*Viel Spaß beim Durchschauen des Codes! Wenn du Fragen zu bestimmten Systemen hast, meld dich gerne. Jeglicher Code steht unter der MIT Lizenz frei zur Verfügung*
